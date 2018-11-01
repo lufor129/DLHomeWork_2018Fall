@@ -41,7 +41,7 @@ def extract_features(imgs, feature_fns, verbose=False):
   imgs_features[0] = np.hstack(first_image_features).T
 
   # Extract features for the rest of the images.
-  for i in xrange(1, num_images):
+  for i in range(1, num_images):
     idx = 0
     for feature_fn, feature_dim in zip(feature_fns, feature_dims):
       next_idx = idx + feature_dim
@@ -85,39 +85,31 @@ def hog_feature(im):
   """
   
   # convert rgb to grayscale if needed
-  if im.ndim == 3:
-    image = rgb2gray(im)
+  if im.ndim==3:
+      image=rgb2gray(im)
   else:
-    image = np.at_least_2d(im)
+      image=np.atleast_2d(im)
+  sx,sy=image.shape
+  orinentations=9
+  cx,cy=(8,8)
 
-  sx, sy = image.shape # image size
-  orientations = 9 # number of gradient bins
-  cx, cy = (8, 8) # pixels per cell
+  gx=np.zeros(image.shape)
+  gy=np.zeros(image.shape)
+  gx[:,:-1]=np.diff(image,n=1,axis=1)
+  gy[:-1,:]=np.diff(image,n=1,axis=0)
+  grad_mag=np.sqrt(gx**2+gy**2)
+  grad_ori=np.arctan2(gy,(gx+1e-15)*(180/np.pi)+90)
+  n_cellx=int(np.floor(sx/cx))
+  n_celly=int(np.floor(sy/cy))
 
-  gx = np.zeros(image.shape)
-  gy = np.zeros(image.shape)
-  gx[:, :-1] = np.diff(image, n=1, axis=1) # compute gradient on x-direction
-  gy[:-1, :] = np.diff(image, n=1, axis=0) # compute gradient on y-direction
-  grad_mag = np.sqrt(gx ** 2 + gy ** 2) # gradient magnitude
-  grad_ori = np.arctan2(gy, (gx + 1e-15)) * (180 / np.pi) + 90 # gradient orientation
-
-  n_cellsx = int(np.floor(sx / cx))  # number of cells in x
-  n_cellsy = int(np.floor(sy / cy))  # number of cells in y
-  # compute orientations integral images
-  orientation_histogram = np.zeros((n_cellsx, n_cellsy, orientations))
-  for i in range(orientations):
-    # create new integral image for this orientation
-    # isolate orientations in this range
-    temp_ori = np.where(grad_ori < 180 / orientations * (i + 1),
-                        grad_ori, 0)
-    temp_ori = np.where(grad_ori >= 180 / orientations * i,
-                        temp_ori, 0)
-    # select magnitudes for those orientations
-    cond2 = temp_ori > 0
-    temp_mag = np.where(cond2, grad_mag, 0)
-    orientation_histogram[:,:,i] = uniform_filter(temp_mag, size=(cx, cy))[cx/2::cx, cy/2::cy].T
-  
-  return orientation_histogram.ravel()
+  orinentations_histogram=np.zeros((n_cellx,n_celly,orinentations))
+  for i in range(orinentations):
+    temp_ori=np.where(grad_ori<180/orinentations*(i+1),grad_ori,0)
+    temp_ori=np.where(grad_ori>=180/orinentations*i,grad_ori,0)
+    cond2=temp_ori>0
+    temp_mag=np.where(cond2,grad_mag,0)
+    orinentations_histogram[:,:,i]=uniform_filter(temp_mag,size=(cx,cy))[int(cx/2)::cx,int(cy/2)::cy].T
+  return orinentations_histogram.ravel()
 
 
 def color_histogram_hsv(im, nbin=10, xmin=0, xmax=255, normalized=True):
