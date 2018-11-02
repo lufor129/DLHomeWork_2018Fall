@@ -62,23 +62,24 @@ def svm_loss_vectorized(W, X, y, reg):
 
   Inputs and outputs are the same as svm_loss_naive.
   """
-#   loss = 0.0
-#   dW = np.zeros(W.shape) # initialize the gradient as zero
+  loss = 0.0
+  dW = np.zeros(W.shape) # initialize the gradient as zero
+  scores = X.dot(W)        # N by C
   num_classes = W.shape[1]
   num_train = X.shape[0]
 
-  scores = X.dot(W)  # N * C
-  correct_class_score = scores[range(num_train), list(y)].reshape(-1, 1)
+  scores_correct = scores[np.arange(num_train), y]   # 1 by N
+  scores_correct = np.reshape(scores_correct, (num_train, 1))  # N by 1
   #############################################################################
   # TODO:                                                                     #
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
-  margin = scores - correct_class_score + 1
-  margin = (margin > 0) * margin
-  margin[range(num_train), list(y)] = 0.0
-  row_loss_sum = np.sum(margin)
-  loss = row_loss_sum / num_train + 0.5 * reg * np.sum(W * W)
+  margins = scores - scores_correct + 1.0     # N by C
+  margins[np.arange(num_train), y] = 0.0
+  margins[margins <= 0] = 0.0
+  loss += np.sum(margins) / num_train
+  loss += 0.5 * reg * np.sum(W * W)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -93,15 +94,13 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
-  coeff_mat = np.zeros((num_train, num_classes))
-  coeff_mat[margin > 0] = 1
-  coeff_mat[range(num_train), list(y)] = 0
-  coeff_mat[range(num_train), list(y)] = - np.sum(coeff_mat, axis=1)
+  margins[margins > 0] = 1.0
+  row_sum = np.sum(margins, axis=1)                  # 1 by N
+  margins[np.arange(num_train), y] = -row_sum        
+  dW += np.dot(X.T, margins)/num_train + reg * W     # D by C
 
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
   
-  dW = X.T.dot(coeff_mat)
-  dW = dW / num_train + reg * W
   return loss, dW
