@@ -9,14 +9,12 @@ def extract_features(imgs, feature_fns, verbose=False):
   single images, apply all feature functions to all images, concatenating the
   feature vectors for each image and storing the features for all images in
   a single matrix.
-
   Inputs:
   - imgs: N x H X W X C array of pixel data for N images.
   - feature_fns: List of k feature functions. The ith feature function should
     take as input an H x W x D array and return a (one-dimensional) array of
     length F_i.
   - verbose: Boolean; if true, print progress.
-
   Returns:
   An array of shape (N, F_1 + ... + F_k) where each column is the concatenation
   of all features for a single image.
@@ -48,17 +46,15 @@ def extract_features(imgs, feature_fns, verbose=False):
       imgs_features[i, idx:next_idx] = feature_fn(imgs[i].squeeze())
       idx = next_idx
     if verbose and i % 1000 == 0:
-      print ('Done extracting features for %d / %d images' % (i, num_images))
+      print('Done extracting features for %d / %d images' % (i, num_images))
 
   return imgs_features
 
 
 def rgb2gray(rgb):
   """Convert RGB image to grayscale
-
     Parameters:
       rgb : RGB image
-
     Returns:
       gray : grayscale image
   
@@ -85,44 +81,50 @@ def hog_feature(im):
   """
   
   # convert rgb to grayscale if needed
-  if im.ndim==3:
-      image=rgb2gray(im)
+  if im.ndim == 3:
+    image = rgb2gray(im)
   else:
-      image=np.atleast_2d(im)
-  sx,sy=image.shape
-  orinentations=9
-  cx,cy=(8,8)
+    image = np.at_least_2d(im)
 
-  gx=np.zeros(image.shape)
-  gy=np.zeros(image.shape)
-  gx[:,:-1]=np.diff(image,n=1,axis=1)
-  gy[:-1,:]=np.diff(image,n=1,axis=0)
-  grad_mag=np.sqrt(gx**2+gy**2)
-  grad_ori=np.arctan2(gy,(gx+1e-15)*(180/np.pi)+90)
-  n_cellx=int(np.floor(sx/cx))
-  n_celly=int(np.floor(sy/cy))
+  sx, sy = image.shape # image size
+  orientations = 9 # number of gradient bins
+  cx, cy = (8, 8) # pixels per cell
 
-  orinentations_histogram=np.zeros((n_cellx,n_celly,orinentations))
-  for i in range(orinentations):
-    temp_ori=np.where(grad_ori<180/orinentations*(i+1),grad_ori,0)
-    temp_ori=np.where(grad_ori>=180/orinentations*i,grad_ori,0)
-    cond2=temp_ori>0
-    temp_mag=np.where(cond2,grad_mag,0)
-    orinentations_histogram[:,:,i]=uniform_filter(temp_mag,size=(cx,cy))[int(cx/2)::cx,int(cy/2)::cy].T
-  return orinentations_histogram.ravel()
+  gx = np.zeros(image.shape)
+  gy = np.zeros(image.shape)
+  gx[:, :-1] = np.diff(image, n=1, axis=1) # compute gradient on x-direction
+  gy[:-1, :] = np.diff(image, n=1, axis=0) # compute gradient on y-direction
+  grad_mag = np.sqrt(gx ** 2 + gy ** 2) # gradient magnitude
+  grad_ori = np.arctan2(gy, (gx + 1e-15)) * (180 / np.pi) + 90 # gradient orientation
+
+  n_cellsx = int(np.floor(sx / cx))  # number of cells in x
+  n_cellsy = int(np.floor(sy / cy))  # number of cells in y
+  # compute orientations integral images
+  orientation_histogram = np.zeros((n_cellsx, n_cellsy, orientations))
+  for i in range(orientations):
+    # create new integral image for this orientation
+    # isolate orientations in this range
+    temp_ori = np.where(grad_ori < 180 / orientations * (i + 1),
+                        grad_ori, 0)
+    temp_ori = np.where(grad_ori >= 180 / orientations * i,
+                        temp_ori, 0)
+    # select magnitudes for those orientations
+    cond2 = temp_ori > 0
+    temp_mag = np.where(cond2, grad_mag, 0)
+    orientation_histogram[:,:,i] = uniform_filter(temp_mag, size=(cx, cy))[int(cx/2)::cx, int(cy/2)::cy].T
+  
+  return orientation_histogram.ravel()
 
 
 def color_histogram_hsv(im, nbin=10, xmin=0, xmax=255, normalized=True):
   """
   Compute color histogram for an image using hue.
-
   Inputs:
   - im: H x W x C array of pixel data for an RGB image.
   - nbin: Number of histogram bins. (default: 10)
   - xmin: Minimum pixel value (default: 0)
   - xmax: Maximum pixel value (default: 255)
   - normalized: Whether to normalize the histogram (default: True)
-
   Returns:
     1D vector of length nbin giving the color histogram over the hue of the
     input image.
