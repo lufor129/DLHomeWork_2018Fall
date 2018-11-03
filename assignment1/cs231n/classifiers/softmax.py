@@ -35,7 +35,7 @@ def softmax_loss_naive(W, X, y, reg):
   f = X.dot(W)    # N by C
   # Considering the Numeric Stability
   f_max = np.reshape(np.max(f, axis=1), (num_train, 1))   # N by 1
-  prob = np.exp(f - f_max) / np.sum(np.exp(f - f_max), axis=1, keepdims=True) # N by C
+  prob = np.exp(f - f_max) / np.sum(np.exp(f - f_max), axis=1, keepdims=True) 
   y_trueClass = np.zeros_like(prob)
   y_trueClass[np.arange(num_train), y] = 1.0
   for i in range(num_train):
