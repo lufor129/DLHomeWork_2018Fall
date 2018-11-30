@@ -107,10 +107,10 @@ class TwoLayerNet(object):
     #############################################################################
     # layer2
     dh2 = exp_class_score / np.sum(exp_class_score, axis=1,keepdims=True)
-    dh2[np.arange(N),y]-=1
+    dh2[np.arange(N),y]-=1   #用exp 為底
     dh2/=N
 
-    dW2=np.dot(h1.T,dh2)
+    dW2=np.dot(h1.T,dh2)   
     dW2+=2*reg*W2
 
     db2=np.sum(dh2,axis=0)
