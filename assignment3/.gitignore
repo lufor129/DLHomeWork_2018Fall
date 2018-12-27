@@ -7,3 +7,6 @@ preprocess_batch_4.p
 preprocess_batch_5.p
 preprocess_training.p
 preprocess_validation.p
+image_classification.data-00000-of-00001
+image_classification.index
+image_classification.meta
